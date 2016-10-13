@@ -2,7 +2,7 @@ import serial
 import click
 import logging
 import time
-
+import subprocess as sp
 
 HEADER_STR_LEN=156
 CR = b'\r'
@@ -18,9 +18,10 @@ def start(serial_device, config):
     ser.write(CR)
     ser.read(HEADER_STR_LEN)
     setupstring = None
+    spectrocmd = ''
     # Читаем строки из конфигурационного файла
     for line in config.readlines():
-        cmd = line.split()
+        cmd = line.split(maxsplit=1)
         if cmd[0].startswith('SETUP:'):
             setupstring = cmd[1]
             ser.timeout=0
@@ -49,7 +50,13 @@ def start(serial_device, config):
                     logging.info(ret.decode("utf-8"))
                 ret = ser.read(154)
                 logging.info(ret.decode("utf-8"))
-                
+
+        elif cmd[0].startswith("SPECTRO:"):
+            spectrocmd = cmd[1]
+            print(spectrocmd)
+            a=sp.Popen([r'--serial-device=/dev/ttyUSB1', r'"%s"'%spectrocmd], 2048, './spectro.py')
+            a.wait()
+
         elif cmd[0].startswith("STOP"):
             logging.info("Stop App")
             ser.close()
